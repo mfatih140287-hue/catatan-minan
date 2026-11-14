@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#092653">
+<meta name="description" content="Catatan Minan - aplikasi catatan transaksi driver offline">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Catatan Minan - B 9334 FXU</title>
+<style>
+:root{--navy:#092653;--navy2:#123c79;--gold:#ffbd27;--gold2:#f5a900;--blue:#1452c5;--green:#0ca64e;--ink:#102c57;--muted:#687a95;--line:#d9e1ef;--bg:#eef3fb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink)}
+header{background:linear-gradient(135deg,#102f63,#061d42);color:white;padding:18px 16px 20px;display:flex;gap:14px;align-items:flex-start}
+.menu{font-size:27px;line-height:1;background:none;border:0;color:white;padding:5px 8px 0 0}
+.brand{flex:1}.brand h1{font-size:clamp(23px,6vw,34px);line-height:1.05;margin:0;font-weight:850;letter-spacing:.2px}.plate{color:var(--gold);font-size:clamp(24px,6vw,34px);font-weight:850;line-height:1.15}.period{font-size:18px;margin-top:5px;color:#f1f5ff}
+main{max-width:1100px;margin:auto;padding:12px}
+.panel{background:#fff;border-radius:17px;overflow:hidden;box-shadow:0 3px 14px #102e5c12;margin-bottom:16px}
+.panel-title{background:var(--navy);color:white;padding:13px 16px;font-size:19px;font-weight:800}
+.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:650px;text-align:center}
+th{background:var(--gold);color:#092653;padding:12px 8px;font-size:15px}
+td{padding:11px 8px;border-bottom:1px solid #e5eaf2;font-size:15px}
+tbody tr:nth-child(odd){background:#f2f5fb}tbody tr:nth-child(even){background:#fff}
+tfoot td{background:#dce8fb;font-weight:800;border:0}
+.actions{display:flex;gap:10px;flex-wrap:wrap;padding:12px}
+.btn{border:0;border-radius:13px;padding:13px 16px;font-size:15px;font-weight:800;color:white;cursor:pointer;min-height:48px}
+.primary{background:linear-gradient(120deg,#164fc0,#0641ad)}.success{background:linear-gradient(120deg,#0db45a,#079345)}.dark{background:var(--navy)}.light{background:#e8eef8;color:var(--ink)}.danger{background:#c83232}
+.actions .btn{flex:1}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;padding:14px}
+label{font-size:13px;font-weight:750;color:#385174;display:block;margin-bottom:5px}
+input,select{width:100%;border:1px solid #cbd6e6;border-radius:10px;padding:11px 10px;font-size:16px;background:white;color:#132e55;min-width:0}
+.full{grid-column:1/-1}
+.form-actions{display:flex;gap:8px;padding:0 14px 14px}.form-actions .btn{flex:1}
+.small{font-size:12px;color:var(--muted);padding:0 14px 12px}
+.rowhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tabs{display:flex;gap:7px;overflow:auto;padding:10px 12px;background:#fff}
+.tab{white-space:nowrap;border:1px solid #d5deec;border-radius:999px;padding:9px 13px;background:#f4f7fc;color:#23436d;font-weight:750}
+.tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.hidden{display:none!important}
+.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px}
+.stat{background:#edf3ff;border-radius:12px;padding:10px;text-align:center}.stat b{display:block;font-size:19px}.stat span{font-size:12px;color:#526985}
+.banktable{min-width:600px}
+.empty{padding:22px;text-align:center;color:#71819a}
+footer{text-align:center;color:#71819a;font-size:12px;padding:10px 0 24px}
+@media(max-width:560px){main{padding:9px}.formgrid{grid-template-columns:1fr}.full{grid-column:auto}.period{font-size:16px}.panel-title{font-size:17px}.statgrid{gap:5px;padding:9px}.stat b{font-size:16px}}
+@media print{body{background:white}header{padding:10px}.tabs,.no-print,.form-panel,footer{display:none!important}main{max-width:none;padding:0}.panel{box-shadow:none;break-inside:avoid}.table-wrap{overflow:visible}table{min-width:0;font-size:11px}td,th{padding:6px 3px}.panel-title{print-color-adjust:exact;-webkit-print-color-adjust:exact}th,tfoot td{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<header>
+<button class="menu" aria-label="Menu" onclick="toggleMenu()">☰</button>
+<div class="brand"><h1>CATATAN MINAN</h1><div class="plate">B 9334 FXU</div><div class="period" id="periodLabel">Periode: -</div></div>
+</header>
+<main>
+<div id="menuArea" class="tabs no-print">
+<button class="tab active" data-tab="catatan" onclick="showTab('catatan',this)">Catatan Transaksi</button>
+<button class="tab" data-tab="rekening" onclick="showTab('rekening',this)">Rekening Driver</button>
+<button class="tab" data-tab="cadangan" onclick="showTab('cadangan',this)">Cadangkan Data</button>
+</div>
+
+<section id="catatan">
+<div class="panel form-panel no-print">
+<div class="panel-title" id="formTitle">＋ Tambah Catatan Transaksi</div>
+<form id="entryForm">
+<div class="formgrid">
+<div><label for="tanggal">Tanggal</label><input id="tanggal" type="date" required></div>
+<div><label for="driver">Nama Driver</label><input id="driver" placeholder="Nama driver" required></div>
+<div><label for="dari">Dari</label><input id="dari" placeholder="Contoh: Lotte" required></div>
+<div><label for="ke">Ke</label><input id="ke" placeholder="Nama tujuan / penerima" required></div>
+<div><label for="uj">UJ</label><input id="uj" type="number" min="0" step="1" placeholder="0" required></div>
+<div><label for="borongan">Borongan</label><input id="borongan" type="number" min="0" step="1" placeholder="0" required></div>
+</div>
+<div class="form-actions"><button class="btn primary" type="submit" id="saveBtn">Simpan Catatan</button><button class="btn light" type="button" onclick="resetForm()">Batal</button></div>
+<div class="small">Sisa dihitung otomatis: Borongan dikurangi UJ. Data tersimpan di HP ini.</div>
+</form>
+</div>
+
+<div class="panel">
+<div class="panel-title rowhead"><span>📋 CATATAN TRANSAKSI</span><button class="btn light no-print" style="padding:7px 11px;min-height:0" onclick="changePeriod()">Periode</button></div>
+<div class="statgrid">
+<div class="stat"><span>Total UJ</span><b id="sumUJ">0</b></div><div class="stat"><span>Total Borongan</span><b id="sumBor">0</b></div><div class="stat"><span>Total Sisa</span><b id="sumSisa">0</b></div>
+</div>
+<div class="table-wrap"><table>
+<thead><tr><th>Tanggal</th><th>Driver</th><th>Dari</th><th>Ke</th><th>UJ</th><th>Borongan</th><th>Sisa</th><th class="no-print">Aksi</th></tr></thead>
+<tbody id="entriesBody"></tbody>
+<tfoot><tr><td colspan="4">TOTAL</td><td id="totalUJ">0</td><td id="totalBor">0</td><td id="totalSisa">0</td><td class="no-print"></td></tr></tfoot>
+</table></div>
+<div class="actions no-print"><button class="btn primary" onclick="window.print()">▣ Cetak / Simpan PDF</button><button class="btn success" onclick="shareReport()">↗ Bagikan</button></div>
+</div>
+</section>
+
+<section id="rekening" class="hidden">
+<div class="panel no-print">
+<div class="panel-title" id="bankFormTitle">＋ Data Rekening Driver</div>
+<form id="bankForm"><div class="formgrid">
+<div><label>Nama Driver</label><input id="bankDriver" required placeholder="Nama driver"></div>
+<div><label>Nama Bank</label><input id="bankName" required placeholder="BRI / BCA / Mandiri"></div>
+<div><label>Nomor Rekening</label><input id="bankNumber" required inputmode="numeric" placeholder="Nomor rekening"></div>
+<div><label>Atas Nama</label><input id="bankOwner" required placeholder="Nama pemilik rekening"></div>
+</div><div class="form-actions"><button class="btn primary" type="submit">Simpan Rekening</button><button class="btn light" type="button" onclick="resetBankForm()">Batal</button></div></form>
+</div>
+<div class="panel"><div class="panel-title">👥 DATA REKENING DRIVER</div><div class="table-wrap"><table class="banktable"><thead><tr><th>Nama Driver</th><th>Nama Bank</th><th>Nomor Rekening</th><th>Atas Nama</th><th class="no-print">Aksi</th></tr></thead><tbody id="banksBody"></tbody></table></div></div>
+</section>
+
+<section id="cadangan" class="hidden">
+<div class="panel"><div class="panel-title">💾 CADANGAN & PEMULIHAN DATA</div>
+<div style="padding:15px"><p>Data tersimpan hanya di browser HP ini. Buat cadangan secara berkala agar data tidak hilang jika browser atau HP direset.</p>
+<button class="btn primary" style="width:100%;margin-bottom:10px" onclick="exportData()">Unduh Cadangan Data</button>
+<label for="importFile">Pulihkan dari file cadangan</label><input id="importFile" type="file" accept="application/json,.json">
+<p class="small" style="padding:10px 0 0">File cadangan berformat JSON. Simpan file di tempat aman. Jangan bagikan jika berisi nomor rekening.</p>
+<button class="btn danger" style="width:100%;margin-top:12px" onclick="clearAll()">Hapus Semua Data</button>
+</div></div>
+</section>
+<footer>CATATAN MINAN • Offline • Data tersimpan di perangkat ini</footer>
+</main>
+<script>
+const KEY='catatanMinanOffline_v1';
+let data={entries:[],banks:[]}, editing=null, editingBank=null, periodStart='', periodEnd='';
+const $=id=>document.getElementById(id);
+function load(){try{const raw=localStorage.getItem(KEY);if(raw)data=JSON.parse(raw);if(!Array.isArray(data.entries))data.entries=[];if(!Array.isArray(data.banks))data.banks=[];}catch(e){alert('Data tidak bisa dibaca. Silakan pulihkan dari cadangan.')}render()}
+function persist(){localStorage.setItem(KEY,JSON.stringify(data));render()}
+function money(n){return Number(n||0).toLocaleString('id-ID')}
+function dateFmt(s){if(!s)return '-';let [y,m,d]=s.split('-');return `${d}/${m}/${y}`}
+function setDefaultDate(){ $('tanggal').value=new Date().toISOString().slice(0,10)}
+function showTab(name,btn){['catatan','rekening','cadangan'].forEach(x=>$(x).classList.toggle('hidden',x!==name));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name))}
+function toggleMenu(){$('menuArea').classList.toggle('hidden')}
+function render(){
+ const list=[...data.entries].sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+ const filtered=list.filter(x=>(!periodStart||x.tanggal>=periodStart)&&(!periodEnd||x.tanggal<=periodEnd));
+ $('entriesBody').innerHTML=filtered.length?filtered.map(x=>{let i=data.entries.indexOf(x);return `<tr><td>${dateFmt(x.tanggal)}</td><td>${esc(x.driver)}</td><td>${esc(x.dari)}</td><td>${esc(x.ke)}</td><td><b>${money(x.uj)}</b></td><td><b>${money(x.borongan)}</b></td><td><b>${money(x.borongan-x.uj)}</b></td><td class="no-print"><button class="btn light" style="padding:6px 8px;min-height:0" onclick="editEntry(${i})">Edit</button> <button class="btn danger" style="padding:6px 8px;min-height:0" onclick="deleteEntry(${i})">Hapus</button></td></tr>`}).join(''):'<tr><td colspan="8" class="empty">Belum ada catatan transaksi.</td></tr>';
+ const sums=filtered.reduce((a,x)=>{a.uj+=+x.uj;a.bor+=+x.borongan;a.sisa+=+x.borongan-+x.uj;return a},{uj:0,bor:0,sisa:0});
+ $('sumUJ').textContent=$('totalUJ').textContent=money(sums.uj);$('sumBor').textContent=$('totalBor').textContent=money(sums.bor);$('sumSisa').textContent=$('totalSisa').textContent=money(sums.sisa);
+ $('banksBody').innerHTML=data.banks.length?data.banks.map((b,i)=>`<tr><td>${esc(b.driver)}</td><td>${esc(b.bank)}</td><td>${esc(b.number)}</td><td>${esc(b.owner)}</td><td class="no-print"><button class="btn light" style="padding:6px 8px;min-height:0" onclick="editBank(${i})">Edit</button> <button class="btn danger" style="padding:6px 8px;min-height:0" onclick="deleteBank(${i})">Hapus</button></td></tr>`).join(''):'<tr><td colspan="5" class="empty">Belum ada data rekening.</td></tr>';
+ $('periodLabel').textContent=periodStart||periodEnd?`Periode: ${periodStart?dateFmt(periodStart):'awal'} - ${periodEnd?dateFmt(periodEnd):'sekarang'}`:'Periode: Semua Catatan';
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function resetForm(){editing=null;$('entryForm').reset();setDefaultDate();$('formTitle').textContent='＋ Tambah Catatan Transaksi';$('saveBtn').textContent='Simpan Catatan'}
+function editEntry(i){let x=data.entries[i];editing=i;['tanggal','driver','dari','ke','uj','borongan'].forEach(k=>$(k).value=x[k]);$('formTitle').textContent='✎ Edit Catatan Transaksi';$('saveBtn').textContent='Simpan Perubahan';window.scrollTo({top:0,behavior:'smooth'})}
+function deleteEntry(i){if(confirm('Hapus catatan ini?')){data.entries.splice(i,1);persist()}}
+$('entryForm').addEventListener('submit',e=>{e.preventDefault();let x={tanggal:$('tanggal').value,driver:$('driver').value.trim(),dari:$('dari').value.trim(),ke:$('ke').value.trim(),uj:+$('uj').value,borongan:+$('borongan').value};if(editing===null)data.entries.push(x);else data.entries[editing]=x;persist();resetForm()});
+function resetBankForm(){editingBank=null;$('bankForm').reset();$('bankFormTitle').textContent='＋ Data Rekening Driver'}
+function editBank(i){let b=data.banks[i];editingBank=i;$('bankDriver').value=b.driver;$('bankName').value=b.bank;$('bankNumber').value=b.number;$('bankOwner').value=b.owner;$('bankFormTitle').textContent='✎ Edit Rekening Driver';showTab('rekening');window.scrollTo({top:0,behavior:'smooth'})}
+function deleteBank(i){if(confirm('Hapus data rekening ini?')){data.banks.splice(i,1);persist()}}
+$('bankForm').addEventListener('submit',e=>{e.preventDefault();let b={driver:$('bankDriver').value.trim(),bank:$('bankName').value.trim(),number:$('bankNumber').value.trim(),owner:$('bankOwner').value.trim()};if(editingBank===null)data.banks.push(b);else data.banks[editingBank]=b;persist();resetBankForm()});
+function changePeriod(){let s=prompt('Tanggal awal (YYYY-MM-DD), kosongkan untuk tanpa batas:',periodStart);if(s===null)return;let e=prompt('Tanggal akhir (YYYY-MM-DD), kosongkan untuk tanpa batas:',periodEnd);if(e===null)return;periodStart=s.trim();periodEnd=e.trim();render()}
+function exportData(){let blob=new Blob([JSON.stringify({...data,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cadangan-catatan-minan.json';a.click();URL.revokeObjectURL(a.href)}
+$('importFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.entries)||!Array.isArray(d.banks))throw Error();if(confirm('Pulihkan data? Data saat ini akan diganti.')){data={entries:d.entries,banks:d.banks};persist();alert('Data berhasil dipulihkan.')}}catch(err){alert('File cadangan tidak valid.')}e.target.value=''});
+function clearAll(){if(confirm('Yakin hapus SEMUA catatan dan rekening di HP ini?')){data={entries:[],banks:[]};persist();resetForm();resetBankForm()}}
+function shareReport(){let text='CATATAN MINAN B 9334 FXU\n'+$('periodLabel').textContent+'\n'+'Total UJ: '+$('totalUJ').textContent+'\nTotal Borongan: '+$('totalBor').textContent+'\nTotal Sisa: '+$('totalSisa').textContent+'\n\n'+data.entries.map(x=>`${dateFmt(x.tanggal)} | ${x.driver} | ${x.dari} → ${x.ke} | UJ ${money(x.uj)} | Borongan ${money(x.borongan)} | Sisa ${money(x.borongan-x.uj)}`).join('\n');if(navigator.share)navigator.share({title:'Catatan Minan',text}).catch(()=>{});else if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>alert('Ringkasan disalin. Silakan tempel di WhatsApp.'))}else alert('Gunakan tombol Cetak / Simpan PDF untuk membagikan laporan.')}
+setDefaultDate();load();
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script>
+</body></html>
