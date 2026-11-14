@@ -7,7 +7,9 @@ Aplikasi web offline untuk catatan transaksi driver. Plat nomor mobil bisa digan
 - Sisa dihitung otomatis (Borongan - UJ) dan ada rekap total.
 - **Plat nomor per driver**: isi di menu Pengaturan, tampil di judul aplikasi dan di gambar laporan. Bisa juga diubah per transaksi.
 - **Bagikan sebagai gambar (PNG)**: pratinjau dulu, lalu kirim ke WhatsApp lewat menu berbagi HP. Jika transaksi banyak, otomatis dibagi beberapa gambar (25 baris per gambar).
-- Data rekening driver.
+- Data rekening driver, ikut tampil di gambar yang dibagikan (bisa dimatikan lewat kotak centang di pratinjau).
+- Tombol periode cepat: Minggu Ini, Minggu Lalu, Semua.
+- Gambar laporan bisa menyertakan tabel sisa: minggu kemarin, minggu ini, dan total semua sisa (hanya angka Sisa; kotak centang di pratinjau, muncul saat periode dipilih).
 - Cetak / simpan PDF.
 - Cadangkan dan pulihkan data JSON.
 - PWA: bisa dipasang di Android dan dipakai offline.
