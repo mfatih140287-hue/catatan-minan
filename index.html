@@ -68,6 +68,7 @@ footer{text-align:center;color:#71819a;font-size:13px;padding:10px 0 24px}
 <div id="menuArea" class="tabs no-print">
 <button class="tab active" data-tab="catatan" onclick="showTab('catatan')">Catatan Transaksi</button>
 <button class="tab" data-tab="rekening" onclick="showTab('rekening')">Rekening Driver</button>
+<button class="tab" data-tab="sisakemarin" onclick="showTab('sisakemarin')">Sisa Minggu Kemarin</button>
 <button class="tab" data-tab="pengurangan" onclick="showTab('pengurangan')">Pengurangan Sisa</button>
 <button class="tab" data-tab="pengaturan" onclick="showTab('pengaturan')">Pengaturan</button>
 <button class="tab" data-tab="cadangan" onclick="showTab('cadangan')">Cadangkan Data</button>
@@ -117,6 +118,18 @@ footer{text-align:center;color:#71819a;font-size:13px;padding:10px 0 24px}
 </div><div class="form-actions"><button class="btn primary" type="submit">Simpan Rekening</button><button class="btn light" type="button" onclick="resetBankForm()">Batal</button></div></form>
 </div>
 <div class="panel"><div class="panel-title">👥 DATA REKENING DRIVER</div><div class="table-wrap"><table class="banktable"><thead><tr><th>Nama Driver</th><th>Nama Bank</th><th>Nomor Rekening</th><th>Atas Nama</th><th class="no-print">Aksi</th></tr></thead><tbody id="banksBody"></tbody></table></div></div>
+</section>
+
+<section id="sisakemarin" class="hidden">
+<div class="panel no-print">
+<div class="panel-title">↩ Sisa Minggu Kemarin</div>
+<div style="padding:0 12px 4px">
+<div class="small" id="skPeriode" style="padding:0 0 8px"></div>
+<div class="formgrid"><div class="full"><label for="prevManualTab">Sisa minggu kemarin (isi manual)</label><input id="prevManualTab" type="number" inputmode="numeric" step="1" placeholder="Otomatis" oninput="onPrevManualInput('prevManualTab')"></div></div>
+<div class="stat" style="margin:10px 0 0;width:auto"><span>Dipakai di laporan</span><b id="skDipakai">0</b></div>
+<div class="form-actions"><button class="btn light" type="button" id="skReset" onclick="resetPrevManual()">Pakai hitungan otomatis</button></div>
+<div class="small">Kosongkan kolom untuk memakai hitungan otomatis dari catatan transaksi minggu kemarin. Angka manual tersimpan otomatis per minggu dan tampil di gambar laporan sebagai baris Minggu Kemarin. Minggu kemarin mengikuti periode yang dipilih di Catatan Transaksi (Minggu Ini atau Minggu Lalu).</div>
+</div></div>
 </section>
 
 <section id="pengurangan" class="hidden">
@@ -169,7 +182,13 @@ footer{text-align:center;color:#71819a;font-size:13px;padding:10px 0 24px}
 <div class="sheet">
 <div class="sheet-head"><span>Pratinjau Gambar</span><button onclick="closeShare()" aria-label="Tutup">✕</button></div>
 <div id="previewList"></div>
-<label id="prevToggle" style="padding:10px 14px;display:flex;gap:10px;align-items:center;font-size:14px;margin:0;background:#fff;border-top:1px solid #e5eaf2"><input type="checkbox" id="inclPrev" checked style="width:20px;height:20px;padding:0" onchange="refreshPreview()"> Sertakan sisa minggu kemarin</label>
+<label id="prevToggle" style="padding:10px 14px;display:flex;gap:10px;align-items:center;font-size:14px;margin:0;background:#fff;border-top:1px solid #e5eaf2"><input type="checkbox" id="inclPrev" checked style="width:20px;height:20px;padding:0" onchange="$('prevManualBox').style.opacity=this.checked?1:.5;refreshPreview()"> Sertakan sisa minggu kemarin</label>
+<div id="prevManualBox" style="padding:10px 14px;background:#fff;border-top:1px solid #e5eaf2">
+<label for="prevManual" style="font-size:14px;font-weight:600;display:block;margin:0 0 4px">Isi manual sisa minggu kemarin</label>
+<div style="display:flex;gap:8px;align-items:center"><input id="prevManual" type="number" inputmode="numeric" step="1" placeholder="Otomatis" oninput="onPrevManualInput()" style="flex:1;min-width:0"><button type="button" id="prevManualReset" class="btn light hidden" style="padding:9px 10px;min-height:0" onclick="resetPrevManual()">Otomatis</button></div>
+<div class="small" id="prevManualInfo" style="padding:6px 0 0"></div>
+<div class="small" style="padding:2px 0 0">Kosongkan kolom untuk memakai hitungan otomatis dari catatan transaksi. Angka manual tersimpan per minggu.</div>
+</div>
 <label id="bankToggle" style="padding:10px 14px;display:flex;gap:10px;align-items:center;font-size:14px;margin:0;background:#fff;border-top:1px solid #e5eaf2"><input type="checkbox" id="inclBank" checked style="width:20px;height:20px;padding:0" onchange="refreshPreview()"> Sertakan data rekening driver</label>
 <div class="sheet-actions"><button class="btn light" onclick="downloadImages()">⬇ Simpan</button><button class="btn success" onclick="shareImages()">Bagikan ke WhatsApp</button></div>
 </div>
@@ -178,7 +197,7 @@ footer{text-align:center;color:#71819a;font-size:13px;padding:10px 0 24px}
 <script>
 const KEY='catatanMinanOffline_v1';
 const ROWS_PER_PAGE=25;
-let data={entries:[],banks:[],deductions:[],settings:{plat:'',driver:''}}, editing=null, editingDed=null, editingBank=null, periodStart='', periodEnd='';
+let data={entries:[],banks:[],deductions:[],prevManual:{},settings:{plat:'',driver:''}}, editing=null, editingDed=null, editingBank=null, periodStart='', periodEnd='';
 let shareFiles=[];
 const $=id=>document.getElementById(id);
 function normPlat(s){return String(s||'').toUpperCase().replace(/\s+/g,' ').trim()}
@@ -189,6 +208,7 @@ function load(){
   if(!Array.isArray(data.entries))data.entries=[];
   if(!Array.isArray(data.banks))data.banks=[];
   if(!Array.isArray(data.deductions))data.deductions=[];
+  if(!data.prevManual||typeof data.prevManual!=='object'||Array.isArray(data.prevManual))data.prevManual={};
   if(!data.settings||typeof data.settings!=='object')data.settings={plat:'',driver:''};
   // migrasi data lama: isi plat transaksi lama dengan plat pengaturan / plat bawaan versi lama
   const legacy=normPlat(data.settings.plat)||'B 9334 FXU';
@@ -206,7 +226,7 @@ function dateFmt(s){if(!s)return '-';let [y,m,d]=s.split('-');return `${d}/${m}/
 function localToday(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function setDefaultDate(){$('tanggal').value=localToday()}
 function applyDefaults(){$('plat').value=data.settings.plat||'';$('driver').value=data.settings.driver||''}
-function showTab(name){['catatan','rekening','pengurangan','pengaturan','cadangan'].forEach(x=>$(x).classList.toggle('hidden',x!==name));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='pengaturan'){$('setPlat').value=data.settings.plat||'';$('setDriver').value=data.settings.driver||''}}
+function showTab(name){['catatan','rekening','sisakemarin','pengurangan','pengaturan','cadangan'].forEach(x=>$(x).classList.toggle('hidden',x!==name));if(name==='sisakemarin')syncPrevManual();document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='pengaturan'){$('setPlat').value=data.settings.plat||'';$('setDriver').value=data.settings.driver||''}}
 function goSettings(){showTab('pengaturan');window.scrollTo({top:0,behavior:'smooth'})}
 function toggleMenu(){$('menuArea').classList.toggle('hidden')}
 function render(){
@@ -235,8 +255,8 @@ function deleteBank(i){if(confirm('Hapus data rekening ini?')){data.banks.splice
 $('bankForm').addEventListener('submit',e=>{e.preventDefault();let b={driver:$('bankDriver').value.trim(),bank:$('bankName').value.trim(),number:$('bankNumber').value.trim(),owner:$('bankOwner').value.trim()};if(editingBank===null)data.banks.push(b);else data.banks[editingBank]=b;persist();resetBankForm()});
 function changePeriod(){let s=prompt('Tanggal awal (YYYY-MM-DD), kosongkan untuk tanpa batas:',periodStart);if(s===null)return;let e=prompt('Tanggal akhir (YYYY-MM-DD), kosongkan untuk tanpa batas:',periodEnd);if(e===null)return;periodStart=s.trim();periodEnd=e.trim();render()}
 function exportData(){let blob=new Blob([JSON.stringify({...data,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cadangan-catatan-minan.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
-$('importFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.entries)||!Array.isArray(d.banks))throw Error();if(confirm('Pulihkan data? Data saat ini akan diganti.')){data={entries:d.entries,banks:d.banks,deductions:Array.isArray(d.deductions)?d.deductions:[],settings:d.settings&&typeof d.settings==='object'?d.settings:{plat:'',driver:''}};persist();load();alert('Data berhasil dipulihkan.')}}catch(err){alert('File cadangan tidak valid.')}e.target.value=''});
-function clearAll(){if(confirm('Yakin hapus SEMUA catatan dan rekening di HP ini? Plat nomor di Pengaturan tetap tersimpan.')){data={entries:[],banks:[],deductions:[],settings:data.settings};persist();resetForm();resetBankForm()}}
+$('importFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.entries)||!Array.isArray(d.banks))throw Error();if(confirm('Pulihkan data? Data saat ini akan diganti.')){data={entries:d.entries,banks:d.banks,deductions:Array.isArray(d.deductions)?d.deductions:[],prevManual:d.prevManual&&typeof d.prevManual==='object'&&!Array.isArray(d.prevManual)?d.prevManual:{},settings:d.settings&&typeof d.settings==='object'?d.settings:{plat:'',driver:''}};persist();load();alert('Data berhasil dipulihkan.')}}catch(err){alert('File cadangan tidak valid.')}e.target.value=''});
+function clearAll(){if(confirm('Yakin hapus SEMUA catatan dan rekening di HP ini? Plat nomor di Pengaturan tetap tersimpan.')){data={entries:[],banks:[],deductions:[],prevManual:{},settings:data.settings};persist();resetForm();resetBankForm()}}
 
 
 /* ===== Pengurangan sisa ===== */
@@ -361,6 +381,25 @@ function sumOf(list){return list.reduce((a,x)=>{a.uj+=+x.uj;a.bor+=+x.borongan;a
 function ymd(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function weekRange(offset,base){const d=base?new Date(base+'T00:00:00'):new Date();d.setHours(0,0,0,0);const dow=(d.getDay()+6)%7;const mon=new Date(d);mon.setDate(d.getDate()-dow+offset*7);const sun=new Date(mon);sun.setDate(mon.getDate()+6);return [ymd(mon),ymd(sun)]}
 function prevWeekRange(){return weekRange(-1,periodStart||null)}
+function prevSisaAuto(a,b){return sumOf(data.entries.filter(x=>x.tanggal>=a&&x.tanggal<=b)).sisa}
+function prevSisaValue(a,b){const m=data.prevManual&&data.prevManual[a];if(m!==undefined&&m!==null&&m!==''&&isFinite(+m))return{val:+m,manual:true};return{val:prevSisaAuto(a,b),manual:false}}
+function syncPrevManual(){
+ const [a,b]=prevWeekRange(),v=prevSisaValue(a,b),auto=prevSisaAuto(a,b),rng=`${dateFmt(a)} - ${dateFmt(b)}`;
+ ['prevManual','prevManualTab'].forEach(id=>{const i=$(id);if(i&&document.activeElement!==i){i.value=v.manual?v.val:''}if(i)i.placeholder='Otomatis: '+money(auto)});
+ $('prevManualInfo').textContent='Minggu kemarin: '+rng;
+ $('skPeriode').textContent='Minggu kemarin: '+rng+(v.manual?'':' (otomatis dari catatan)');
+ $('skDipakai').textContent=money(v.val)+(v.manual?' (manual)':' (otomatis)');
+ $('prevManualReset').classList.toggle('hidden',!v.manual);$('skReset').classList.toggle('hidden',!v.manual);
+}
+let prevManualTimer=null;
+function onPrevManualInput(srcId){
+ const [a]=prevWeekRange(),raw=$(srcId||'prevManual').value.trim();
+ if(raw===''||!isFinite(+raw))delete data.prevManual[a];else data.prevManual[a]=Math.round(+raw);
+ localStorage.setItem(KEY,JSON.stringify(data));
+ syncPrevManual();
+ if(!$('shareModal').classList.contains('hidden')){clearTimeout(prevManualTimer);prevManualTimer=setTimeout(refreshPreview,450)}
+}
+function resetPrevManual(){const [a]=prevWeekRange();delete data.prevManual[a];localStorage.setItem(KEY,JSON.stringify(data));syncPrevManual();if(!$('shareModal').classList.contains('hidden'))refreshPreview()}
 function setWeek(off){const [a,b]=weekRange(off);periodStart=a;periodEnd=b;render()}
 function setAllPeriod(){periodStart='';periodEnd='';render()}
 async function buildImages(withBank,withPrev){
@@ -369,7 +408,7 @@ async function buildImages(withBank,withPrev){
  const lines=[];let base=totals.sisa,title='',scopeStart=periodStart;
  if(withPrev){
   const [a,b]=prevWeekRange();scopeStart=a;
-  const prevSisa=sumOf(data.entries.filter(x=>x.tanggal>=a&&x.tanggal<=b)).sisa;
+  const prevSisa=prevSisaValue(a,b).val;
   const curLabel=(periodStart&&periodEnd)?`Minggu Ini (${sh(periodStart)} - ${sh(periodEnd)})`:'Periode Ini';
   lines.push({label:`Minggu Kemarin (${sh(a)} - ${sh(b)})`,val:prevSisa});
   lines.push({label:curLabel,val:totals.sisa});
@@ -405,6 +444,7 @@ async function refreshPreview(){try{await renderPreview()}catch(e){alert('Gagal 
 async function openShare(){
  if(!data.settings.plat&&!confirm('Plat nomor belum diisi di Pengaturan. Lanjutkan tanpa plat nomor?')){goSettings();return}
  $('bankToggle').classList.toggle('hidden',!data.banks.length);$('prevToggle').classList.toggle('hidden',!periodStart);
+ $('prevManualBox').classList.toggle('hidden',!periodStart);if(periodStart)syncPrevManual();
  try{await renderPreview()}catch(e){alert('Gagal membuat gambar: '+e.message);return}
  $('shareModal').classList.remove('hidden');
 }
