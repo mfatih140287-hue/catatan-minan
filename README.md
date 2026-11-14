@@ -10,6 +10,7 @@ Aplikasi web offline untuk catatan transaksi driver. Plat nomor mobil bisa digan
 - Data rekening driver, ikut tampil di gambar yang dibagikan (bisa dimatikan lewat kotak centang di pratinjau).
 - Tombol periode cepat: Minggu Ini, Minggu Lalu, Semua.
 - Gambar laporan bisa menyertakan tabel sisa: minggu kemarin, minggu ini, dan total semua sisa (hanya angka Sisa; kotak centang di pratinjau, muncul saat periode dipilih).
+- Menu Pengurangan Sisa: catat pengurangan (tanggal, keterangan, jumlah) yang mengurangi total semua sisa; hasilnya tampil sebagai SISA AKHIR di gambar laporan.
 - Cetak / simpan PDF.
 - Cadangkan dan pulihkan data JSON.
 - PWA: bisa dipasang di Android dan dipakai offline.

@@ -68,6 +68,7 @@ footer{text-align:center;color:#71819a;font-size:12px;padding:10px 0 24px}
 <div id="menuArea" class="tabs no-print">
 <button class="tab active" data-tab="catatan" onclick="showTab('catatan')">Catatan Transaksi</button>
 <button class="tab" data-tab="rekening" onclick="showTab('rekening')">Rekening Driver</button>
+<button class="tab" data-tab="pengurangan" onclick="showTab('pengurangan')">Pengurangan Sisa</button>
 <button class="tab" data-tab="pengaturan" onclick="showTab('pengaturan')">Pengaturan</button>
 <button class="tab" data-tab="cadangan" onclick="showTab('cadangan')">Cadangkan Data</button>
 </div>
@@ -118,6 +119,21 @@ footer{text-align:center;color:#71819a;font-size:12px;padding:10px 0 24px}
 <div class="panel"><div class="panel-title">👥 DATA REKENING DRIVER</div><div class="table-wrap"><table class="banktable"><thead><tr><th>Nama Driver</th><th>Nama Bank</th><th>Nomor Rekening</th><th>Atas Nama</th><th class="no-print">Aksi</th></tr></thead><tbody id="banksBody"></tbody></table></div></div>
 </section>
 
+<section id="pengurangan" class="hidden">
+<div class="panel no-print">
+<div class="panel-title" id="dedFormTitle">− Kurangi Total Sisa</div>
+<form id="dedForm"><div class="formgrid">
+<div><label for="dedTanggal">Tanggal</label><input id="dedTanggal" type="date" required></div>
+<div><label for="dedJumlah">Jumlah Pengurangan</label><input id="dedJumlah" type="number" inputmode="numeric" min="1" step="1" placeholder="0" required></div>
+<div class="full"><label for="dedKet">Keterangan</label><input id="dedKet" placeholder="Contoh: Setoran, Bayar kasbon, Potongan" required></div>
+</div><div class="form-actions"><button class="btn primary" type="submit" id="dedSaveBtn">Simpan Pengurangan</button><button class="btn light" type="button" onclick="resetDedForm()">Batal</button></div>
+<div class="small">Pengurangan dihitung dari total semua sisa dan tampil di gambar yang dibagikan sebagai "SISA AKHIR". Hanya pengurangan yang tanggalnya masuk periode laporan yang ikut dihitung.</div></form>
+</div>
+<div class="panel"><div class="panel-title">📉 DAFTAR PENGURANGAN SISA</div>
+<div class="table-wrap"><table class="banktable"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Jumlah</th><th class="no-print">Aksi</th></tr></thead><tbody id="dedsBody"></tbody>
+<tfoot><tr><td colspan="2">TOTAL (periode terpilih)</td><td id="dedTotal">0</td><td class="no-print"></td></tr></tfoot></table></div></div>
+</section>
+
 <section id="pengaturan" class="hidden">
 <div class="panel no-print" id="installPanel">
 <div class="panel-title">📲 PASANG APLIKASI</div>
@@ -162,7 +178,7 @@ footer{text-align:center;color:#71819a;font-size:12px;padding:10px 0 24px}
 <script>
 const KEY='catatanMinanOffline_v1';
 const ROWS_PER_PAGE=25;
-let data={entries:[],banks:[],settings:{plat:'',driver:''}}, editing=null, editingBank=null, periodStart='', periodEnd='';
+let data={entries:[],banks:[],deductions:[],settings:{plat:'',driver:''}}, editing=null, editingDed=null, editingBank=null, periodStart='', periodEnd='';
 let shareFiles=[];
 const $=id=>document.getElementById(id);
 function normPlat(s){return String(s||'').toUpperCase().replace(/\s+/g,' ').trim()}
@@ -172,6 +188,7 @@ function load(){
   if(raw)data=JSON.parse(raw);
   if(!Array.isArray(data.entries))data.entries=[];
   if(!Array.isArray(data.banks))data.banks=[];
+  if(!Array.isArray(data.deductions))data.deductions=[];
   if(!data.settings||typeof data.settings!=='object')data.settings={plat:'',driver:''};
   // migrasi data lama: isi plat transaksi lama dengan plat pengaturan / plat bawaan versi lama
   const legacy=normPlat(data.settings.plat)||'B 9334 FXU';
@@ -189,7 +206,7 @@ function dateFmt(s){if(!s)return '-';let [y,m,d]=s.split('-');return `${d}/${m}/
 function localToday(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function setDefaultDate(){$('tanggal').value=localToday()}
 function applyDefaults(){$('plat').value=data.settings.plat||'';$('driver').value=data.settings.driver||''}
-function showTab(name){['catatan','rekening','pengaturan','cadangan'].forEach(x=>$(x).classList.toggle('hidden',x!==name));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='pengaturan'){$('setPlat').value=data.settings.plat||'';$('setDriver').value=data.settings.driver||''}}
+function showTab(name){['catatan','rekening','pengurangan','pengaturan','cadangan'].forEach(x=>$(x).classList.toggle('hidden',x!==name));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='pengaturan'){$('setPlat').value=data.settings.plat||'';$('setDriver').value=data.settings.driver||''}}
 function goSettings(){showTab('pengaturan');window.scrollTo({top:0,behavior:'smooth'})}
 function toggleMenu(){$('menuArea').classList.toggle('hidden')}
 function render(){
@@ -202,6 +219,7 @@ function render(){
  const sums=filtered.reduce((a,x)=>{a.uj+=+x.uj;a.bor+=+x.borongan;a.sisa+=+x.borongan-+x.uj;return a},{uj:0,bor:0,sisa:0});
  $('sumUJ').textContent=$('totalUJ').textContent=money(sums.uj);$('sumBor').textContent=$('totalBor').textContent=money(sums.bor);$('sumSisa').textContent=$('totalSisa').textContent=money(sums.sisa);
  $('banksBody').innerHTML=data.banks.length?data.banks.map((b,i)=>`<tr><td>${esc(b.driver)}</td><td>${esc(b.bank)}</td><td>${esc(b.number)}</td><td>${esc(b.owner)}</td><td class="no-print"><button class="btn light" style="padding:6px 8px;min-height:0" onclick="editBank(${i})">Edit</button> <button class="btn danger" style="padding:6px 8px;min-height:0" onclick="deleteBank(${i})">Hapus</button></td></tr>`).join(''):'<tr><td colspan="5" class="empty">Belum ada data rekening.</td></tr>';
+ renderDeds();
  $('periodLabel').textContent=periodLabelText();
 }
 function periodLabelText(){return periodStart||periodEnd?`Periode: ${periodStart?dateFmt(periodStart):'awal'} - ${periodEnd?dateFmt(periodEnd):'sekarang'}`:'Periode: Semua Catatan'}
@@ -217,15 +235,29 @@ function deleteBank(i){if(confirm('Hapus data rekening ini?')){data.banks.splice
 $('bankForm').addEventListener('submit',e=>{e.preventDefault();let b={driver:$('bankDriver').value.trim(),bank:$('bankName').value.trim(),number:$('bankNumber').value.trim(),owner:$('bankOwner').value.trim()};if(editingBank===null)data.banks.push(b);else data.banks[editingBank]=b;persist();resetBankForm()});
 function changePeriod(){let s=prompt('Tanggal awal (YYYY-MM-DD), kosongkan untuk tanpa batas:',periodStart);if(s===null)return;let e=prompt('Tanggal akhir (YYYY-MM-DD), kosongkan untuk tanpa batas:',periodEnd);if(e===null)return;periodStart=s.trim();periodEnd=e.trim();render()}
 function exportData(){let blob=new Blob([JSON.stringify({...data,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cadangan-catatan-minan.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
-$('importFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.entries)||!Array.isArray(d.banks))throw Error();if(confirm('Pulihkan data? Data saat ini akan diganti.')){data={entries:d.entries,banks:d.banks,settings:d.settings&&typeof d.settings==='object'?d.settings:{plat:'',driver:''}};persist();load();alert('Data berhasil dipulihkan.')}}catch(err){alert('File cadangan tidak valid.')}e.target.value=''});
-function clearAll(){if(confirm('Yakin hapus SEMUA catatan dan rekening di HP ini? Plat nomor di Pengaturan tetap tersimpan.')){data={entries:[],banks:[],settings:data.settings};persist();resetForm();resetBankForm()}}
+$('importFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.entries)||!Array.isArray(d.banks))throw Error();if(confirm('Pulihkan data? Data saat ini akan diganti.')){data={entries:d.entries,banks:d.banks,deductions:Array.isArray(d.deductions)?d.deductions:[],settings:d.settings&&typeof d.settings==='object'?d.settings:{plat:'',driver:''}};persist();load();alert('Data berhasil dipulihkan.')}}catch(err){alert('File cadangan tidak valid.')}e.target.value=''});
+function clearAll(){if(confirm('Yakin hapus SEMUA catatan dan rekening di HP ini? Plat nomor di Pengaturan tetap tersimpan.')){data={entries:[],banks:[],deductions:[],settings:data.settings};persist();resetForm();resetBankForm()}}
+
+
+/* ===== Pengurangan sisa ===== */
+function inPeriod(t){return (!periodStart||t>=periodStart)&&(!periodEnd||t<=periodEnd)}
+function renderDeds(){
+ const body=$('dedsBody');if(!body)return;
+ const list=data.deductions.map((x,i)=>({x,i})).sort((a,b)=>b.x.tanggal.localeCompare(a.x.tanggal));
+ body.innerHTML=list.length?list.map(({x,i})=>`<tr style="${inPeriod(x.tanggal)?'':'opacity:.5'}"><td>${dateFmt(x.tanggal)}</td><td>${esc(x.ket)}</td><td><b>${money(x.jumlah)}</b></td><td class="no-print"><button class="btn light" style="padding:6px 8px;min-height:0" onclick="editDed(${i})">Edit</button> <button class="btn danger" style="padding:6px 8px;min-height:0" onclick="deleteDed(${i})">Hapus</button></td></tr>`).join(''):'<tr><td colspan="4" class="empty">Belum ada pengurangan.</td></tr>';
+ $('dedTotal').textContent=money(data.deductions.filter(x=>inPeriod(x.tanggal)).reduce((a,x)=>a+ +x.jumlah,0));
+}
+function resetDedForm(){editingDed=null;$('dedForm').reset();$('dedTanggal').value=localToday();$('dedFormTitle').textContent='− Kurangi Total Sisa';$('dedSaveBtn').textContent='Simpan Pengurangan'}
+function editDed(i){const x=data.deductions[i];editingDed=i;$('dedTanggal').value=x.tanggal;$('dedKet').value=x.ket;$('dedJumlah').value=x.jumlah;$('dedFormTitle').textContent='✎ Edit Pengurangan';$('dedSaveBtn').textContent='Simpan Perubahan';showTab('pengurangan');window.scrollTo({top:0,behavior:'smooth'})}
+function deleteDed(i){if(confirm('Hapus pengurangan ini?')){data.deductions.splice(i,1);persist()}}
+$('dedForm').addEventListener('submit',e=>{e.preventDefault();const x={tanggal:$('dedTanggal').value,ket:$('dedKet').value.trim(),jumlah:+$('dedJumlah').value};if(editingDed===null)data.deductions.push(x);else data.deductions[editingDed]=x;persist();resetDedForm()});
 
 /* ===== Bagikan sebagai gambar ===== */
 function filteredEntries(){return [...data.entries].sort((a,b)=>a.tanggal.localeCompare(b.tanggal)).filter(x=>(!periodStart||x.tanggal>=periodStart)&&(!periodEnd||x.tanggal<=periodEnd))}
 function fit(ctx,text,maxW){text=String(text??'');if(ctx.measureText(text).width<=maxW)return text;while(text.length>1&&ctx.measureText(text+'…').width>maxW)text=text.slice(0,-1);return text+'…'}
 function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
-function drawPage(rows,pageNo,pageCount,totals,showTotals,banks,periodText,carry){
- banks=banks||[];const CARRYH=carry?(20+56+50+3*58):0;const BANKROW=84,BANKH=banks.length?(20+56+banks.length*BANKROW):0;
+function drawPage(rows,pageNo,pageCount,totals,showTotals,banks,periodText,card){
+ banks=banks||[];const CARRYH=card?(20+56+50+card.lines.length*58):0;const BANKROW=84,BANKH=banks.length?(20+56+banks.length*BANKROW):0;
  const W=1080,PAD=28,ROW=58,HEAD=190,STAT=130,TH=56,FOOT=showTotals?(ROW+30):30,BOTTOM=60;
  const H=HEAD+(pageNo===1?STAT:20)+TH+Math.max(rows.length,1)*ROW+FOOT+BOTTOM+BANKH+CARRYH;
  const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
@@ -277,24 +309,27 @@ function drawPage(rows,pageNo,pageCount,totals,showTotals,banks,periodText,carry
  }
  ctx.restore();
 
- if(carry){
-  const cy=ry+20,cw=W-PAD*2,ch=56+50+3*58;
+ if(card){
+  const cy=ry+20,cw=W-PAD*2,ch=56+50+card.lines.length*58;
   const c0=Math.round(cw*0.62),c1=cw-c0;
   ctx.fillStyle='#fff';rr(ctx,PAD,cy,cw,ch,16);ctx.fill();
   ctx.save();rr(ctx,PAD,cy,cw,ch,16);ctx.clip();
   ctx.fillStyle='#092653';ctx.fillRect(PAD,cy,cw,56);
-  ctx.fillStyle='#fff';ctx.font=`800 26px ${F}`;ctx.textAlign='left';ctx.fillText('SISA MINGGU KEMARIN',PAD+20,cy+37);
+  ctx.fillStyle='#fff';ctx.font=`800 26px ${F}`;ctx.textAlign='left';ctx.fillText(card.title,PAD+20,cy+37);
   ctx.fillStyle='#ffbd27';ctx.fillRect(PAD,cy+56,cw,50);
   ctx.fillStyle='#092653';ctx.font=`800 23px ${F}`;
   ctx.textAlign='left';ctx.fillText('Keterangan',PAD+20,cy+89);
   ctx.textAlign='center';ctx.fillText('Sisa',PAD+c0+c1/2,cy+89);
-  const grandSisa=carry.prev.sisa+carry.cur.sisa;
-  const lines=[[carry.prevLabel,carry.prev.sisa,'#f2f5fb','#102c57'],[carry.curLabel,carry.cur.sisa,'#ffffff','#102c57'],['TOTAL SEMUA SISA',grandSisa,'#092653','#ffffff']];
-  lines.forEach((ln,i)=>{
-   const yy=cy+106+i*58;ctx.fillStyle=ln[2];ctx.fillRect(PAD,yy,cw,58);
-   ctx.fillStyle=ln[3];ctx.textAlign='left';ctx.font=(i===2?'800 ':'600 ')+`24px ${F}`;
-   ctx.fillText(fit(ctx,ln[0],c0-30),PAD+20,yy+37);
-   ctx.textAlign='center';ctx.font=`800 ${i===2?30:28}px ${F}`;ctx.fillText(money(ln[1]),PAD+c0+c1/2,yy+38);
+  card.lines.forEach((ln,i)=>{
+   const yy=cy+106+i*58,kind=ln.kind||'row';
+   let bg=i%2===0?'#f2f5fb':'#ffffff',fg='#102c57';
+   if(kind==='total'){bg='#092653';fg='#ffffff'}
+   if(kind==='final'){bg='#ffbd27';fg='#092653'}
+   if(kind==='minus'){fg='#c83232'}
+   ctx.fillStyle=bg;ctx.fillRect(PAD,yy,cw,58);
+   ctx.fillStyle=fg;ctx.textAlign='left';ctx.font=((kind==='total'||kind==='final')?'800 ':'600 ')+`24px ${F}`;
+   ctx.fillText(fit(ctx,ln.label,c0-30),PAD+20,yy+37);
+   ctx.textAlign='center';ctx.font=`800 ${(kind==='total'||kind==='final')?30:28}px ${F}`;ctx.fillText(money(ln.val),PAD+c0+c1/2,yy+38);
   });
   ctx.restore();
   ry=cy+ch;
@@ -330,18 +365,31 @@ function setAllPeriod(){periodStart='';periodEnd='';render()}
 async function buildImages(withBank,withPrev){
  const list=filteredEntries(),totals=sumOf(list);
  const sh=d=>dateFmt(d).slice(0,5);
- let carry=null;
+ const lines=[];let base=totals.sisa,title='',scopeStart=periodStart;
  if(withPrev){
-  const [a,b]=prevWeekRange();
-  const prevList=data.entries.filter(x=>x.tanggal>=a&&x.tanggal<=b);
-  carry={prevLabel:`Minggu Kemarin (${sh(a)} - ${sh(b)})`,prev:sumOf(prevList),curLabel:(periodStart&&periodEnd)?`Minggu Ini (${sh(periodStart)} - ${sh(periodEnd)})`:'Periode Ini',cur:totals};
+  const [a,b]=prevWeekRange();scopeStart=a;
+  const prevSisa=sumOf(data.entries.filter(x=>x.tanggal>=a&&x.tanggal<=b)).sisa;
+  const curLabel=(periodStart&&periodEnd)?`Minggu Ini (${sh(periodStart)} - ${sh(periodEnd)})`:'Periode Ini';
+  lines.push({label:`Minggu Kemarin (${sh(a)} - ${sh(b)})`,val:prevSisa});
+  lines.push({label:curLabel,val:totals.sisa});
+  base=prevSisa+totals.sisa;
+  lines.push({label:'TOTAL SEMUA SISA',val:base,kind:'total'});
+  title='SISA MINGGU KEMARIN';
  }
+ const deds=data.deductions.filter(x=>(!scopeStart||x.tanggal>=scopeStart)&&(!periodEnd||x.tanggal<=periodEnd)).sort((x,y)=>x.tanggal.localeCompare(y.tanggal));
+ if(deds.length){
+  if(!withPrev)lines.push({label:'Total Sisa',val:base,kind:'total'});
+  deds.forEach(d=>lines.push({label:`Pengurangan: ${d.ket} (${sh(d.tanggal)})`,val:-d.jumlah,kind:'minus'}));
+  lines.push({label:'SISA AKHIR',val:base-deds.reduce((a,d)=>a+ +d.jumlah,0),kind:'final'});
+  title=withPrev?'SISA & PENGURANGAN':'PENGURANGAN SISA';
+ }
+ const card=lines.length?{title,lines}:null;
  const slug=(data.settings.plat||'catatan').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'');
  const pages=[];for(let i=0;i<Math.max(list.length,1);i+=ROWS_PER_PAGE)pages.push(list.slice(i,i+ROWS_PER_PAGE));
  const files=[];
  for(let i=0;i<pages.length;i++){
   const last=i===pages.length-1;
-  const cv=drawPage(pages[i],i+1,pages.length,totals,last,last&&withBank?data.banks:[],null,last?carry:null);
+  const cv=drawPage(pages[i],i+1,pages.length,totals,last,last&&withBank?data.banks:[],null,last?card:null);
   const blob=await toBlob(cv);
   files.push(new File([blob],`catatan-minan-${slug}${pages.length>1?'-hal'+(i+1):''}.png`,{type:'image/png'}));
  }
@@ -387,7 +435,7 @@ async function doInstall(){
  alert('Cara memasang di Android:\n1. Buka alamat aplikasi ini di Chrome.\n2. Ketuk menu ⋮ di kanan atas.\n3. Pilih "Pasang aplikasi" atau "Tambahkan ke layar utama".\n4. Ketuk Pasang.');
 }
 updateInstallUI();
-setDefaultDate();load();applyDefaults();
+setDefaultDate();$('dedTanggal').value=localToday();load();applyDefaults();
 if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 </script>
 </body></html>
