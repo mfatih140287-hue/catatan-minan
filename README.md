@@ -1,35 +1,27 @@
-# Catatan Minan B 9334 FXU (Offline)
+# Catatan Minan (Offline)
 
-Aplikasi web offline untuk catatan transaksi driver.
+Aplikasi web offline untuk catatan transaksi driver. Plat nomor mobil bisa diganti oleh masing-masing driver, dan laporan dibagikan ke WhatsApp sebagai gambar.
 
 ## Fitur
-- Tambah, edit, hapus transaksi.
-- Hitung sisa otomatis (Borongan - UJ).
-- Rekap total UJ, borongan, dan sisa.
+- Tambah, edit, hapus transaksi (Tanggal, Driver, Plat, Dari, Ke, UJ, Borongan).
+- Sisa dihitung otomatis (Borongan - UJ) dan ada rekap total.
+- **Plat nomor per driver**: isi di menu Pengaturan, tampil di judul aplikasi dan di gambar laporan. Bisa juga diubah per transaksi.
+- **Bagikan sebagai gambar (PNG)**: pratinjau dulu, lalu kirim ke WhatsApp lewat menu berbagi HP. Jika transaksi banyak, otomatis dibagi beberapa gambar (25 baris per gambar).
 - Data rekening driver.
-- Cetak / simpan PDF dan bagikan ringkasan.
+- Cetak / simpan PDF.
 - Cadangkan dan pulihkan data JSON.
-- PWA: dapat dipasang di Android dan dipakai offline setelah pertama kali dibuka.
+- PWA: bisa dipasang di Android dan dipakai offline.
 
 ## Penting
-- Data disimpan lokal di browser/perangkat masing-masing (localStorage).
-- Tidak ada sinkronisasi antar-HP dan tidak ada akun/admin online.
+- Data disimpan lokal di HP masing-masing (localStorage), tidak ada sinkronisasi antar-HP.
 - Jangan hapus data browser sebelum membuat cadangan JSON.
-- GitHub Pages hanya meng-host file aplikasi; catatan transaksi tidak dikirim ke GitHub.
+- Jika sebelumnya memakai versi lama di alamat yang sama, data lama tetap terbaca; plat transaksi lama diisi otomatis.
 
 ## Cara unggah lewat HP Android
 1. Buka https://github.com dan masuk akun.
-2. Tekan tombol **+** lalu **New repository**.
-3. Nama repository: `catatan-minan`, pilih **Public**, lalu **Create repository**.
-4. Di halaman repository, pilih **Add file** > **Upload files**.
-5. Ekstrak ZIP ini terlebih dahulu, lalu unggah semua isi folder (index.html, manifest.webmanifest, sw.js, icon-192.png, icon-512.png, README.md).
-6. Tekan **Commit changes**.
-7. Buka **Settings** > **Pages**.
-8. Pada **Build and deployment**, pilih **Deploy from a branch**.
-9. Pilih branch **main**, folder **/(root)**, lalu **Save**.
-10. Tunggu beberapa menit. URL aplikasi akan muncul di bagian Pages, biasanya `https://NAMA-USERNAME.github.io/catatan-minan/`.
-11. Buka URL itu di Chrome Android, pilih menu ⋮ > **Tambahkan ke layar utama** atau **Install app**.
-12. Buka aplikasi sekali saat online agar file tersimpan untuk penggunaan offline.
-
-## Penggunaan
-Masukkan transaksi melalui tab Catatan Transaksi. Gunakan tab Rekening Driver untuk data rekening. Buat cadangan secara berkala melalui tab Cadangkan Data.
+2. Tekan **+** > **New repository**, nama `catatan-minan`, **Public**, **Create repository**.
+3. **Add file** > **Upload files**, unggah semua isi folder ZIP ini (ekstrak dulu), lalu **Commit changes**.
+4. **Settings** > **Pages** > **Deploy from a branch** > branch **main**, folder **/(root)** > **Save**.
+5. Buka URL `https://NAMA-USERNAME.github.io/catatan-minan/` di Chrome Android, lalu ⋮ > **Tambahkan ke layar utama**.
+6. Buka sekali saat online agar tersimpan untuk penggunaan offline.
+7. Masuk ke menu **Pengaturan** dan isi plat nomor mobil Anda.

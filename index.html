@@ -6,13 +6,17 @@
 <meta name="theme-color" content="#092653">
 <meta name="description" content="Catatan Minan - aplikasi catatan transaksi driver offline">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Catatan Minan - B 9334 FXU</title>
+<link rel="icon" href="icon-192.png">
+<title>Catatan Minan</title>
 <style>
 :root{--navy:#092653;--navy2:#123c79;--gold:#ffbd27;--gold2:#f5a900;--blue:#1452c5;--green:#0ca64e;--ink:#102c57;--muted:#687a95;--line:#d9e1ef;--bg:#eef3fb}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink)}
 header{background:linear-gradient(135deg,#102f63,#061d42);color:white;padding:18px 16px 20px;display:flex;gap:14px;align-items:flex-start}
 .menu{font-size:27px;line-height:1;background:none;border:0;color:white;padding:5px 8px 0 0}
-.brand{flex:1}.brand h1{font-size:clamp(23px,6vw,34px);line-height:1.05;margin:0;font-weight:850;letter-spacing:.2px}.plate{color:var(--gold);font-size:clamp(24px,6vw,34px);font-weight:850;line-height:1.15}.period{font-size:18px;margin-top:5px;color:#f1f5ff}
+.brand{flex:1}.brand h1{font-size:clamp(23px,6vw,34px);line-height:1.05;margin:0;font-weight:850;letter-spacing:.2px}
+.plate{color:var(--gold);font-size:clamp(24px,6vw,34px);font-weight:850;line-height:1.15;cursor:pointer;display:inline-block}
+.plate small{font-size:.5em;color:#cfe0ff;font-weight:600;margin-left:6px}
+.period{font-size:18px;margin-top:5px;color:#f1f5ff}
 main{max-width:1100px;margin:auto;padding:12px}
 .panel{background:#fff;border-radius:17px;overflow:hidden;box-shadow:0 3px 14px #102e5c12;margin-bottom:16px}
 .panel-title{background:var(--navy);color:white;padding:13px 16px;font-size:19px;font-weight:800}
@@ -28,6 +32,7 @@ tfoot td{background:#dce8fb;font-weight:800;border:0}
 .formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;padding:14px}
 label{font-size:13px;font-weight:750;color:#385174;display:block;margin-bottom:5px}
 input,select{width:100%;border:1px solid #cbd6e6;border-radius:10px;padding:11px 10px;font-size:16px;background:white;color:#132e55;min-width:0}
+#plat,#setPlat{text-transform:uppercase;font-weight:800;letter-spacing:1px}
 .full{grid-column:1/-1}
 .form-actions{display:flex;gap:8px;padding:0 14px 14px}.form-actions .btn{flex:1}
 .small{font-size:12px;color:var(--muted);padding:0 14px 12px}
@@ -41,6 +46,15 @@ input,select{width:100%;border:1px solid #cbd6e6;border-radius:10px;padding:11px
 .banktable{min-width:600px}
 .empty{padding:22px;text-align:center;color:#71819a}
 footer{text-align:center;color:#71819a;font-size:12px;padding:10px 0 24px}
+/* preview gambar */
+#shareModal{position:fixed;inset:0;background:#000b;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+#shareModal .sheet{background:#fff;width:100%;max-width:560px;max-height:94vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden}
+#shareModal .sheet-head{padding:14px 16px;background:var(--navy);color:#fff;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+#shareModal .sheet-head button{background:none;border:0;color:#fff;font-size:24px;line-height:1}
+#previewList{overflow-y:auto;padding:12px;display:grid;gap:12px;background:#eef3fb}
+#previewList img{width:100%;border-radius:10px;box-shadow:0 2px 10px #0003;background:#fff}
+#shareModal .sheet-actions{display:flex;gap:10px;padding:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+#shareModal .sheet-actions .btn{flex:1}
 @media(max-width:560px){main{padding:9px}.formgrid{grid-template-columns:1fr}.full{grid-column:auto}.period{font-size:16px}.panel-title{font-size:17px}.statgrid{gap:5px;padding:9px}.stat b{font-size:16px}}
 @media print{body{background:white}header{padding:10px}.tabs,.no-print,.form-panel,footer{display:none!important}main{max-width:none;padding:0}.panel{box-shadow:none;break-inside:avoid}.table-wrap{overflow:visible}table{min-width:0;font-size:11px}td,th{padding:6px 3px}.panel-title{print-color-adjust:exact;-webkit-print-color-adjust:exact}th,tfoot td{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 </style>
@@ -48,13 +62,14 @@ footer{text-align:center;color:#71819a;font-size:12px;padding:10px 0 24px}
 <body>
 <header>
 <button class="menu" aria-label="Menu" onclick="toggleMenu()">☰</button>
-<div class="brand"><h1>CATATAN MINAN</h1><div class="plate">B 9334 FXU</div><div class="period" id="periodLabel">Periode: -</div></div>
+<div class="brand"><h1>CATATAN MINAN</h1><div class="plate" id="plateLabel" onclick="goSettings()" title="Ketuk untuk mengganti plat nomor">-</div><div class="period" id="periodLabel">Periode: -</div></div>
 </header>
 <main>
 <div id="menuArea" class="tabs no-print">
-<button class="tab active" data-tab="catatan" onclick="showTab('catatan',this)">Catatan Transaksi</button>
-<button class="tab" data-tab="rekening" onclick="showTab('rekening',this)">Rekening Driver</button>
-<button class="tab" data-tab="cadangan" onclick="showTab('cadangan',this)">Cadangkan Data</button>
+<button class="tab active" data-tab="catatan" onclick="showTab('catatan')">Catatan Transaksi</button>
+<button class="tab" data-tab="rekening" onclick="showTab('rekening')">Rekening Driver</button>
+<button class="tab" data-tab="pengaturan" onclick="showTab('pengaturan')">Pengaturan</button>
+<button class="tab" data-tab="cadangan" onclick="showTab('cadangan')">Cadangkan Data</button>
 </div>
 
 <section id="catatan">
@@ -64,13 +79,14 @@ footer{text-align:center;color:#71819a;font-size:12px;padding:10px 0 24px}
 <div class="formgrid">
 <div><label for="tanggal">Tanggal</label><input id="tanggal" type="date" required></div>
 <div><label for="driver">Nama Driver</label><input id="driver" placeholder="Nama driver" required></div>
+<div class="full"><label for="plat">Plat Nomor Mobil</label><input id="plat" placeholder="Contoh: B 1234 ABC" autocapitalize="characters" required></div>
 <div><label for="dari">Dari</label><input id="dari" placeholder="Contoh: Lotte" required></div>
 <div><label for="ke">Ke</label><input id="ke" placeholder="Nama tujuan / penerima" required></div>
-<div><label for="uj">UJ</label><input id="uj" type="number" min="0" step="1" placeholder="0" required></div>
-<div><label for="borongan">Borongan</label><input id="borongan" type="number" min="0" step="1" placeholder="0" required></div>
+<div><label for="uj">UJ</label><input id="uj" type="number" inputmode="numeric" min="0" step="1" placeholder="0" required></div>
+<div><label for="borongan">Borongan</label><input id="borongan" type="number" inputmode="numeric" min="0" step="1" placeholder="0" required></div>
 </div>
 <div class="form-actions"><button class="btn primary" type="submit" id="saveBtn">Simpan Catatan</button><button class="btn light" type="button" onclick="resetForm()">Batal</button></div>
-<div class="small">Sisa dihitung otomatis: Borongan dikurangi UJ. Data tersimpan di HP ini.</div>
+<div class="small">Sisa dihitung otomatis: Borongan dikurangi UJ. Plat nomor otomatis terisi dari Pengaturan, tapi bisa diganti per transaksi. Data tersimpan di HP ini.</div>
 </form>
 </div>
 
@@ -80,11 +96,11 @@ footer{text-align:center;color:#71819a;font-size:12px;padding:10px 0 24px}
 <div class="stat"><span>Total UJ</span><b id="sumUJ">0</b></div><div class="stat"><span>Total Borongan</span><b id="sumBor">0</b></div><div class="stat"><span>Total Sisa</span><b id="sumSisa">0</b></div>
 </div>
 <div class="table-wrap"><table>
-<thead><tr><th>Tanggal</th><th>Driver</th><th>Dari</th><th>Ke</th><th>UJ</th><th>Borongan</th><th>Sisa</th><th class="no-print">Aksi</th></tr></thead>
+<thead><tr><th>Tanggal</th><th>Driver</th><th>Plat</th><th>Dari</th><th>Ke</th><th>UJ</th><th>Borongan</th><th>Sisa</th><th class="no-print">Aksi</th></tr></thead>
 <tbody id="entriesBody"></tbody>
-<tfoot><tr><td colspan="4">TOTAL</td><td id="totalUJ">0</td><td id="totalBor">0</td><td id="totalSisa">0</td><td class="no-print"></td></tr></tfoot>
+<tfoot><tr><td colspan="5">TOTAL</td><td id="totalUJ">0</td><td id="totalBor">0</td><td id="totalSisa">0</td><td class="no-print"></td></tr></tfoot>
 </table></div>
-<div class="actions no-print"><button class="btn primary" onclick="window.print()">▣ Cetak / Simpan PDF</button><button class="btn success" onclick="shareReport()">↗ Bagikan</button></div>
+<div class="actions no-print"><button class="btn primary" onclick="window.print()">▣ Cetak / Simpan PDF</button><button class="btn success" onclick="openShare()">🖼 Bagikan Gambar</button></div>
 </div>
 </section>
 
@@ -101,6 +117,20 @@ footer{text-align:center;color:#71819a;font-size:12px;padding:10px 0 24px}
 <div class="panel"><div class="panel-title">👥 DATA REKENING DRIVER</div><div class="table-wrap"><table class="banktable"><thead><tr><th>Nama Driver</th><th>Nama Bank</th><th>Nomor Rekening</th><th>Atas Nama</th><th class="no-print">Aksi</th></tr></thead><tbody id="banksBody"></tbody></table></div></div>
 </section>
 
+<section id="pengaturan" class="hidden">
+<div class="panel no-print">
+<div class="panel-title">⚙ PENGATURAN DRIVER</div>
+<form id="settingsForm">
+<div class="formgrid">
+<div class="full"><label for="setPlat">Plat Nomor Mobil</label><input id="setPlat" placeholder="Contoh: B 1234 ABC" autocapitalize="characters" required></div>
+<div class="full"><label for="setDriver">Nama Driver (opsional)</label><input id="setDriver" placeholder="Terisi otomatis di form catatan"></div>
+</div>
+<div class="form-actions"><button class="btn primary" type="submit">Simpan Pengaturan</button></div>
+<div class="small">Plat nomor ini tampil di judul aplikasi dan di gambar yang dibagikan ke WhatsApp. Setiap driver mengisi plat mobilnya sendiri di HP masing-masing.</div>
+</form>
+</div>
+</section>
+
 <section id="cadangan" class="hidden">
 <div class="panel"><div class="panel-title">💾 CADANGAN & PEMULIHAN DATA</div>
 <div style="padding:15px"><p>Data tersimpan hanya di browser HP ini. Buat cadangan secara berkala agar data tidak hilang jika browser atau HP direset.</p>
@@ -112,41 +142,171 @@ footer{text-align:center;color:#71819a;font-size:12px;padding:10px 0 24px}
 </section>
 <footer>CATATAN MINAN • Offline • Data tersimpan di perangkat ini</footer>
 </main>
+
+<div id="shareModal" class="hidden" onclick="if(event.target===this)closeShare()">
+<div class="sheet">
+<div class="sheet-head"><span>Pratinjau Gambar</span><button onclick="closeShare()" aria-label="Tutup">✕</button></div>
+<div id="previewList"></div>
+<div class="sheet-actions"><button class="btn light" onclick="downloadImages()">⬇ Simpan</button><button class="btn success" onclick="shareImages()">Bagikan ke WhatsApp</button></div>
+</div>
+</div>
+
 <script>
 const KEY='catatanMinanOffline_v1';
-let data={entries:[],banks:[]}, editing=null, editingBank=null, periodStart='', periodEnd='';
+const ROWS_PER_PAGE=25;
+let data={entries:[],banks:[],settings:{plat:'',driver:''}}, editing=null, editingBank=null, periodStart='', periodEnd='';
+let shareFiles=[];
 const $=id=>document.getElementById(id);
-function load(){try{const raw=localStorage.getItem(KEY);if(raw)data=JSON.parse(raw);if(!Array.isArray(data.entries))data.entries=[];if(!Array.isArray(data.banks))data.banks=[];}catch(e){alert('Data tidak bisa dibaca. Silakan pulihkan dari cadangan.')}render()}
+function normPlat(s){return String(s||'').toUpperCase().replace(/\s+/g,' ').trim()}
+function load(){
+ try{
+  const raw=localStorage.getItem(KEY);
+  if(raw)data=JSON.parse(raw);
+  if(!Array.isArray(data.entries))data.entries=[];
+  if(!Array.isArray(data.banks))data.banks=[];
+  if(!data.settings||typeof data.settings!=='object')data.settings={plat:'',driver:''};
+  // migrasi data lama: isi plat transaksi lama dengan plat pengaturan / plat bawaan versi lama
+  const legacy=normPlat(data.settings.plat)||'B 9334 FXU';
+  let changed=false;
+  data.entries.forEach(x=>{if(!x.plat){x.plat=legacy;changed=true}});
+  if(!data.settings.plat&&raw&&data.entries.length){data.settings.plat=legacy;changed=true}
+  if(changed)localStorage.setItem(KEY,JSON.stringify(data));
+ }catch(e){alert('Data tidak bisa dibaca. Silakan pulihkan dari cadangan.')}
+ render();
+ if(!data.settings.plat){showTab('pengaturan');setTimeout(()=>alert('Selamat datang! Isi plat nomor mobil Anda terlebih dahulu di menu Pengaturan.'),200)}
+}
 function persist(){localStorage.setItem(KEY,JSON.stringify(data));render()}
 function money(n){return Number(n||0).toLocaleString('id-ID')}
 function dateFmt(s){if(!s)return '-';let [y,m,d]=s.split('-');return `${d}/${m}/${y}`}
-function setDefaultDate(){ $('tanggal').value=new Date().toISOString().slice(0,10)}
-function showTab(name,btn){['catatan','rekening','cadangan'].forEach(x=>$(x).classList.toggle('hidden',x!==name));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name))}
+function localToday(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function setDefaultDate(){$('tanggal').value=localToday()}
+function applyDefaults(){$('plat').value=data.settings.plat||'';$('driver').value=data.settings.driver||''}
+function showTab(name){['catatan','rekening','pengaturan','cadangan'].forEach(x=>$(x).classList.toggle('hidden',x!==name));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(name==='pengaturan'){$('setPlat').value=data.settings.plat||'';$('setDriver').value=data.settings.driver||''}}
+function goSettings(){showTab('pengaturan');window.scrollTo({top:0,behavior:'smooth'})}
 function toggleMenu(){$('menuArea').classList.toggle('hidden')}
 function render(){
+ const plat=data.settings.plat;
+ $('plateLabel').innerHTML=plat?`${esc(plat)}<small>✎ ganti</small>`:'Isi plat nomor';
+ document.title=plat?`Catatan Minan - ${plat}`:'Catatan Minan';
  const list=[...data.entries].sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
  const filtered=list.filter(x=>(!periodStart||x.tanggal>=periodStart)&&(!periodEnd||x.tanggal<=periodEnd));
- $('entriesBody').innerHTML=filtered.length?filtered.map(x=>{let i=data.entries.indexOf(x);return `<tr><td>${dateFmt(x.tanggal)}</td><td>${esc(x.driver)}</td><td>${esc(x.dari)}</td><td>${esc(x.ke)}</td><td><b>${money(x.uj)}</b></td><td><b>${money(x.borongan)}</b></td><td><b>${money(x.borongan-x.uj)}</b></td><td class="no-print"><button class="btn light" style="padding:6px 8px;min-height:0" onclick="editEntry(${i})">Edit</button> <button class="btn danger" style="padding:6px 8px;min-height:0" onclick="deleteEntry(${i})">Hapus</button></td></tr>`}).join(''):'<tr><td colspan="8" class="empty">Belum ada catatan transaksi.</td></tr>';
+ $('entriesBody').innerHTML=filtered.length?filtered.map(x=>{let i=data.entries.indexOf(x);return `<tr><td>${dateFmt(x.tanggal)}</td><td>${esc(x.driver)}</td><td>${esc(x.plat)}</td><td>${esc(x.dari)}</td><td>${esc(x.ke)}</td><td><b>${money(x.uj)}</b></td><td><b>${money(x.borongan)}</b></td><td><b>${money(x.borongan-x.uj)}</b></td><td class="no-print"><button class="btn light" style="padding:6px 8px;min-height:0" onclick="editEntry(${i})">Edit</button> <button class="btn danger" style="padding:6px 8px;min-height:0" onclick="deleteEntry(${i})">Hapus</button></td></tr>`}).join(''):'<tr><td colspan="9" class="empty">Belum ada catatan transaksi.</td></tr>';
  const sums=filtered.reduce((a,x)=>{a.uj+=+x.uj;a.bor+=+x.borongan;a.sisa+=+x.borongan-+x.uj;return a},{uj:0,bor:0,sisa:0});
  $('sumUJ').textContent=$('totalUJ').textContent=money(sums.uj);$('sumBor').textContent=$('totalBor').textContent=money(sums.bor);$('sumSisa').textContent=$('totalSisa').textContent=money(sums.sisa);
  $('banksBody').innerHTML=data.banks.length?data.banks.map((b,i)=>`<tr><td>${esc(b.driver)}</td><td>${esc(b.bank)}</td><td>${esc(b.number)}</td><td>${esc(b.owner)}</td><td class="no-print"><button class="btn light" style="padding:6px 8px;min-height:0" onclick="editBank(${i})">Edit</button> <button class="btn danger" style="padding:6px 8px;min-height:0" onclick="deleteBank(${i})">Hapus</button></td></tr>`).join(''):'<tr><td colspan="5" class="empty">Belum ada data rekening.</td></tr>';
- $('periodLabel').textContent=periodStart||periodEnd?`Periode: ${periodStart?dateFmt(periodStart):'awal'} - ${periodEnd?dateFmt(periodEnd):'sekarang'}`:'Periode: Semua Catatan';
+ $('periodLabel').textContent=periodLabelText();
 }
+function periodLabelText(){return periodStart||periodEnd?`Periode: ${periodStart?dateFmt(periodStart):'awal'} - ${periodEnd?dateFmt(periodEnd):'sekarang'}`:'Periode: Semua Catatan'}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function resetForm(){editing=null;$('entryForm').reset();setDefaultDate();$('formTitle').textContent='＋ Tambah Catatan Transaksi';$('saveBtn').textContent='Simpan Catatan'}
-function editEntry(i){let x=data.entries[i];editing=i;['tanggal','driver','dari','ke','uj','borongan'].forEach(k=>$(k).value=x[k]);$('formTitle').textContent='✎ Edit Catatan Transaksi';$('saveBtn').textContent='Simpan Perubahan';window.scrollTo({top:0,behavior:'smooth'})}
+function resetForm(){editing=null;$('entryForm').reset();setDefaultDate();applyDefaults();$('formTitle').textContent='＋ Tambah Catatan Transaksi';$('saveBtn').textContent='Simpan Catatan'}
+function editEntry(i){let x=data.entries[i];editing=i;['tanggal','driver','plat','dari','ke','uj','borongan'].forEach(k=>$(k).value=x[k]);showTab('catatan');$('formTitle').textContent='✎ Edit Catatan Transaksi';$('saveBtn').textContent='Simpan Perubahan';window.scrollTo({top:0,behavior:'smooth'})}
 function deleteEntry(i){if(confirm('Hapus catatan ini?')){data.entries.splice(i,1);persist()}}
-$('entryForm').addEventListener('submit',e=>{e.preventDefault();let x={tanggal:$('tanggal').value,driver:$('driver').value.trim(),dari:$('dari').value.trim(),ke:$('ke').value.trim(),uj:+$('uj').value,borongan:+$('borongan').value};if(editing===null)data.entries.push(x);else data.entries[editing]=x;persist();resetForm()});
+$('entryForm').addEventListener('submit',e=>{e.preventDefault();let x={tanggal:$('tanggal').value,driver:$('driver').value.trim(),plat:normPlat($('plat').value),dari:$('dari').value.trim(),ke:$('ke').value.trim(),uj:+$('uj').value,borongan:+$('borongan').value};if(editing===null)data.entries.push(x);else data.entries[editing]=x;if(!data.settings.plat)data.settings.plat=x.plat;persist();resetForm()});
+$('settingsForm').addEventListener('submit',e=>{e.preventDefault();data.settings.plat=normPlat($('setPlat').value);data.settings.driver=$('setDriver').value.trim();persist();if(editing===null)applyDefaults();alert('Pengaturan disimpan.');showTab('catatan')});
 function resetBankForm(){editingBank=null;$('bankForm').reset();$('bankFormTitle').textContent='＋ Data Rekening Driver'}
 function editBank(i){let b=data.banks[i];editingBank=i;$('bankDriver').value=b.driver;$('bankName').value=b.bank;$('bankNumber').value=b.number;$('bankOwner').value=b.owner;$('bankFormTitle').textContent='✎ Edit Rekening Driver';showTab('rekening');window.scrollTo({top:0,behavior:'smooth'})}
 function deleteBank(i){if(confirm('Hapus data rekening ini?')){data.banks.splice(i,1);persist()}}
 $('bankForm').addEventListener('submit',e=>{e.preventDefault();let b={driver:$('bankDriver').value.trim(),bank:$('bankName').value.trim(),number:$('bankNumber').value.trim(),owner:$('bankOwner').value.trim()};if(editingBank===null)data.banks.push(b);else data.banks[editingBank]=b;persist();resetBankForm()});
 function changePeriod(){let s=prompt('Tanggal awal (YYYY-MM-DD), kosongkan untuk tanpa batas:',periodStart);if(s===null)return;let e=prompt('Tanggal akhir (YYYY-MM-DD), kosongkan untuk tanpa batas:',periodEnd);if(e===null)return;periodStart=s.trim();periodEnd=e.trim();render()}
-function exportData(){let blob=new Blob([JSON.stringify({...data,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cadangan-catatan-minan.json';a.click();URL.revokeObjectURL(a.href)}
-$('importFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.entries)||!Array.isArray(d.banks))throw Error();if(confirm('Pulihkan data? Data saat ini akan diganti.')){data={entries:d.entries,banks:d.banks};persist();alert('Data berhasil dipulihkan.')}}catch(err){alert('File cadangan tidak valid.')}e.target.value=''});
-function clearAll(){if(confirm('Yakin hapus SEMUA catatan dan rekening di HP ini?')){data={entries:[],banks:[]};persist();resetForm();resetBankForm()}}
-function shareReport(){let text='CATATAN MINAN B 9334 FXU\n'+$('periodLabel').textContent+'\n'+'Total UJ: '+$('totalUJ').textContent+'\nTotal Borongan: '+$('totalBor').textContent+'\nTotal Sisa: '+$('totalSisa').textContent+'\n\n'+data.entries.map(x=>`${dateFmt(x.tanggal)} | ${x.driver} | ${x.dari} → ${x.ke} | UJ ${money(x.uj)} | Borongan ${money(x.borongan)} | Sisa ${money(x.borongan-x.uj)}`).join('\n');if(navigator.share)navigator.share({title:'Catatan Minan',text}).catch(()=>{});else if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>alert('Ringkasan disalin. Silakan tempel di WhatsApp.'))}else alert('Gunakan tombol Cetak / Simpan PDF untuk membagikan laporan.')}
-setDefaultDate();load();
+function exportData(){let blob=new Blob([JSON.stringify({...data,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cadangan-catatan-minan.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+$('importFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.entries)||!Array.isArray(d.banks))throw Error();if(confirm('Pulihkan data? Data saat ini akan diganti.')){data={entries:d.entries,banks:d.banks,settings:d.settings&&typeof d.settings==='object'?d.settings:{plat:'',driver:''}};persist();load();alert('Data berhasil dipulihkan.')}}catch(err){alert('File cadangan tidak valid.')}e.target.value=''});
+function clearAll(){if(confirm('Yakin hapus SEMUA catatan dan rekening di HP ini? Plat nomor di Pengaturan tetap tersimpan.')){data={entries:[],banks:[],settings:data.settings};persist();resetForm();resetBankForm()}}
+
+/* ===== Bagikan sebagai gambar ===== */
+function filteredEntries(){return [...data.entries].sort((a,b)=>a.tanggal.localeCompare(b.tanggal)).filter(x=>(!periodStart||x.tanggal>=periodStart)&&(!periodEnd||x.tanggal<=periodEnd))}
+function fit(ctx,text,maxW){text=String(text??'');if(ctx.measureText(text).width<=maxW)return text;while(text.length>1&&ctx.measureText(text+'…').width>maxW)text=text.slice(0,-1);return text+'…'}
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function drawPage(rows,pageNo,pageCount,totals,showTotals){
+ const W=1080,PAD=28,ROW=58,HEAD=190,STAT=130,TH=56,FOOT=showTotals?(ROW+30):30,BOTTOM=60;
+ const H=HEAD+(pageNo===1?STAT:20)+TH+Math.max(rows.length,1)*ROW+FOOT+BOTTOM;
+ const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
+ const F='system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif';
+ ctx.fillStyle='#eef3fb';ctx.fillRect(0,0,W,H);
+ // header
+ const g=ctx.createLinearGradient(0,0,W,HEAD);g.addColorStop(0,'#102f63');g.addColorStop(1,'#061d42');ctx.fillStyle=g;ctx.fillRect(0,0,W,HEAD);
+ ctx.textBaseline='alphabetic';ctx.textAlign='left';
+ ctx.fillStyle='#fff';ctx.font=`800 52px ${F}`;ctx.fillText('CATATAN MINAN',PAD,70);
+ ctx.fillStyle='#ffbd27';ctx.font=`800 56px ${F}`;ctx.fillText(data.settings.plat||'-',PAD,132);
+ ctx.fillStyle='#f1f5ff';ctx.font=`500 28px ${F}`;ctx.fillText(periodLabelText(),PAD,172);
+ if(pageCount>1){ctx.textAlign='right';ctx.font=`600 26px ${F}`;ctx.fillStyle='#cfe0ff';ctx.fillText(`Hal ${pageNo}/${pageCount}`,W-PAD,70);ctx.textAlign='left'}
+ let y=HEAD+20;
+ // ringkasan (halaman 1)
+ if(pageNo===1){
+  const bw=(W-PAD*2-24)/3;
+  [['Total UJ',totals.uj],['Total Borongan',totals.bor],['Total Sisa',totals.sisa]].forEach((s,i)=>{
+   const x=PAD+i*(bw+12);ctx.fillStyle='#edf3ff';rr(ctx,x,y,bw,92,16);ctx.fill();
+   ctx.fillStyle='#526985';ctx.font=`500 24px ${F}`;ctx.textAlign='center';ctx.fillText(s[0],x+bw/2,y+34);
+   ctx.fillStyle='#102c57';ctx.font=`800 36px ${F}`;ctx.fillText(money(s[1]),x+bw/2,y+74);
+  });
+  y+=92+18;
+ }else y+=0;
+ // tabel
+ const cols=[{t:'Tanggal',w:118},{t:'Driver',w:140},{t:'Dari',w:120},{t:'Ke',w:150},{t:'UJ',w:150},{t:'Borongan',w:168},{t:'Sisa',w:178}];
+ const tw=cols.reduce((a,c)=>a+c.w,0);const sc=(W-PAD*2)/tw;cols.forEach(c=>c.w*=sc);
+ ctx.fillStyle='#fff';rr(ctx,PAD,y,W-PAD*2,TH+Math.max(rows.length,1)*ROW+(showTotals?ROW:0),16);ctx.fill();
+ ctx.save();rr(ctx,PAD,y,W-PAD*2,TH+Math.max(rows.length,1)*ROW+(showTotals?ROW:0),16);ctx.clip();
+ ctx.fillStyle='#ffbd27';ctx.fillRect(PAD,y,W-PAD*2,TH);
+ ctx.fillStyle='#092653';ctx.font=`800 24px ${F}`;ctx.textAlign='center';
+ let x=PAD;cols.forEach(cl=>{ctx.fillText(cl.t,x+cl.w/2,y+37);x+=cl.w});
+ let ry=y+TH;
+ if(!rows.length){ctx.fillStyle='#71819a';ctx.font=`500 26px ${F}`;ctx.fillText('Belum ada catatan transaksi.',W/2,ry+38)}
+ rows.forEach((r,i)=>{
+  ctx.fillStyle=i%2===0?'#f2f5fb':'#ffffff';ctx.fillRect(PAD,ry,W-PAD*2,ROW);
+  const vals=[dateFmt(r.tanggal).slice(0,6)+dateFmt(r.tanggal).slice(8),r.driver,r.dari,r.ke,money(r.uj),money(r.borongan),money(r.borongan-r.uj)];
+  let cx=PAD;
+  vals.forEach((v,k)=>{ctx.font=(k>=4?'800 ':'500 ')+`24px ${F}`;ctx.fillStyle='#102c57';ctx.fillText(fit(ctx,v,cols[k].w-14),cx+cols[k].w/2,ry+37);cx+=cols[k].w});
+  ctx.fillStyle='#e5eaf2';ctx.fillRect(PAD,ry+ROW-1,W-PAD*2,1);
+  ry+=ROW;
+ });
+ if(!rows.length)ry+=ROW;
+ if(showTotals){
+  ctx.fillStyle='#dce8fb';ctx.fillRect(PAD,ry,W-PAD*2,ROW);
+  ctx.fillStyle='#102c57';ctx.font=`800 24px ${F}`;
+  const lw=cols[0].w+cols[1].w+cols[2].w+cols[3].w;ctx.fillText('TOTAL',PAD+lw/2,ry+38);
+  let cx=PAD+lw;[totals.uj,totals.bor,totals.sisa].forEach((v,k)=>{ctx.fillText(money(v),cx+cols[4+k].w/2,ry+38);cx+=cols[4+k].w});
+  ry+=ROW;
+ }
+ ctx.restore();
+ ctx.fillStyle='#71819a';ctx.font=`500 22px ${F}`;ctx.textAlign='center';
+ const now=new Date();ctx.fillText(`Dibuat ${dateFmt(localToday())} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} • Catatan Minan`,W/2,H-24);
+ return c;
+}
+function toBlob(c){return new Promise(res=>c.toBlob(res,'image/png'))}
+async function buildImages(){
+ const list=filteredEntries();
+ const totals=list.reduce((a,x)=>{a.uj+=+x.uj;a.bor+=+x.borongan;a.sisa+=+x.borongan-+x.uj;return a},{uj:0,bor:0,sisa:0});
+ const pages=[];for(let i=0;i<Math.max(list.length,1);i+=ROWS_PER_PAGE)pages.push(list.slice(i,i+ROWS_PER_PAGE));
+ const slug=(data.settings.plat||'catatan').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'');
+ const files=[];
+ for(let i=0;i<pages.length;i++){
+  const cv=drawPage(pages[i],i+1,pages.length,totals,i===pages.length-1);
+  const blob=await toBlob(cv);
+  files.push(new File([blob],`catatan-minan-${slug}${pages.length>1?'-hal'+(i+1):''}.png`,{type:'image/png'}));
+ }
+ return files;
+}
+async function openShare(){
+ if(!data.settings.plat&&!confirm('Plat nomor belum diisi di Pengaturan. Lanjutkan tanpa plat nomor?')){goSettings();return}
+ try{
+  shareFiles=await buildImages();
+ }catch(e){alert('Gagal membuat gambar: '+e.message);return}
+ const box=$('previewList');box.innerHTML='';
+ shareFiles.forEach(f=>{const img=new Image();img.src=URL.createObjectURL(f);img.alt='Pratinjau laporan';box.appendChild(img)});
+ $('shareModal').classList.remove('hidden');
+}
+function closeShare(){$('shareModal').classList.add('hidden');$('previewList').querySelectorAll('img').forEach(i=>URL.revokeObjectURL(i.src));$('previewList').innerHTML=''}
+async function shareImages(){
+ try{
+  if(navigator.canShare&&navigator.canShare({files:shareFiles})){
+   await navigator.share({files:shareFiles,title:'Catatan Minan '+(data.settings.plat||'')});
+  }else{
+   downloadImages();alert('Perangkat ini belum mendukung berbagi langsung. Gambar disimpan, silakan kirim lewat WhatsApp dari galeri.');
+  }
+ }catch(e){if(e&&e.name!=='AbortError')alert('Gagal membagikan gambar. Gunakan tombol Simpan lalu kirim dari galeri.')}
+}
+function downloadImages(){shareFiles.forEach((f,i)=>setTimeout(()=>{const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000)},i*400))}
+
+setDefaultDate();load();applyDefaults();
 if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 </script>
 </body></html>
